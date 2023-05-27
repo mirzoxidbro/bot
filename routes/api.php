@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\BotController;
+use App\Http\Controllers\TelegramController;
+use App\Models\BotUser;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use GuzzleHttp\Client;
-
+use Telegram\Bot\Laravel\Facades\Telegram;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,18 +31,4 @@ Route::get('test', function(Request $request){
 });
 
 
-Route::post('/webhook', function () {
-    $update = json_decode(file_get_contents('php://input'), true);
-    $chat_id = $update['message']['chat']['id'];
-    $text = 'Assalomu alaykum';
-
-    $client = new Client();
-    $response = $client->post('https://api.telegram.org/bot'.env('TELEGRAM_BOT_TOKEN').'/sendMessage', [
-        'form_params' => [
-            'chat_id' => $chat_id,
-            'text' => $text
-        ]
-    ]);
-
-    return 'ok';
-});
+Route::post('/webhook', [TelegramController::class, 'handle']);
