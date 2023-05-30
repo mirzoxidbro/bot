@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\BotUser;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 
 class TelegramController extends Controller
 {
     public function handle()
     {
         $update = json_decode(file_get_contents('php://input'), true);
+        Log::alert([$update]);
         $chat_id = $update['message']['chat']['id'];
         $text = $update['message']['text'];
 
