@@ -14,7 +14,6 @@ class TelegramBotController extends Controller
     }
     public function handle(Request $request)
     {
-        info($request);
         return $this->service->handle();
     }
 }
