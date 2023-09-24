@@ -2,69 +2,118 @@
 
 namespace App\Services;
 
+use App\Models\BotUser;
+
 class FirstBotService {
 
     public $telegram;
+    public $chat_id;
     public function __construct()
     { 
         $this->telegram = new Telegram('6184404394:AAF2Hv4XDZKw37rROZKRJP9Nq1hagBs7y4E');
+        $this->chat_id = $this->telegram->ChatID();
     }
 
     public function handle()
     {
+        $user = BotUser::firstOrCreate(
+            ['chatId' => $this->chat_id]
+        );
         $chat_id = $this->telegram->ChatID();
         $text = $this->telegram->Text();
-        // info($text);
         $data = $this->telegram->getData();
         $message = $data['message'];
-        // $text = $message['text'];
-        if(isset($data['message']['contact'])){
-            info($data['message']['contact']['phone_number']);
-        }
-        $this->telegram->sendMessage([
-            'chat_id' => $chat_id,
-            'text' => json_encode($data, JSON_PRETTY_PRINT)
-        ]);
-        if($text == '/start'){ 
-            $content = array('chat_id' => $chat_id, 'text' => "Salom botimizga xush kelibsiz");
-            $this->telegram->sendMessage($content);
 
-            $option = [
-                [$this->telegram->buildKeyboardButton("Ma'lumot olish")], 
-                [$this->telegram->buildKeyboardButton("Buyurtma berish")] 
-            ];
-            $keyb = $this->telegram->buildKeyBoard($option, $onetime=false);
-            $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "This is a Keyboard Test");
-            $this->telegram->sendMessage($content);
-        }elseif($text == 'Buyurtma berish'){
-            $option = [
-                [$this->telegram->buildKeyboardButton("1 kg")], 
-                [$this->telegram->buildKeyboardButton("2 kg")] 
-            ];
-            $keyb = $this->telegram->buildKeyBoard($option, $onetime=false);
-            $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Buyurtma berish uchun hajmlardan birini tanlang");
-            $this->telegram->sendMessage($content);
-
-        }elseif($text == "Ma'lumot olish"){
-            $content = array('chat_id' => $chat_id, 'text' => "Vapshe zo'r");
-            $this->telegram->sendMessage($content);
-        }elseif($text == "1 kg"){
-            $this->askContact();
-        }elseif($text == "2 kg"){
-            $this->askContact();
+        info($user->step);
+        info($text);
+        if($text == '/start'){
+            $this->showStart();
+        }elseif($user->step == BotUser::STEP_ASK_FULLNAME){
+            $this->askFullname();
+        }elseif($user->step == BotUser::STEP_ASK_FULLNAME){
+            $this->askAge();
+        }elseif($user->step == BotUser::STEP_ASK_AGE){
+            $this->askAge();
         }
     }
-
+ 
     private function askContact()
     {
-        $chat_id = $this->telegram->ChatID();
-
         $option = [
             [$this->telegram->buildKeyboardButton("Kontraktni ulashish", $request_contact = true)],
         ];
-        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true);
-        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos kontaktingizni jo'nating");
-        $this->telegram->sendMessage($content);        
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos kontaktingizni jo'nating");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askFullname()
+    {
+        $user = BotUser::where('chatId', $this->chat_id)->first();
+        $user->step = BotUser::STEP_ASK_FULLNAME;
+        $user->fullname = $this->telegram->Text();
+        $user->save();
+        $option = [
+            [$this->telegram->buildKeyboardButton("Iltimos ismingizni kiriting")]
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false,$resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos yoshingizni kiriting");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askAge()
+    {
+        $user = BotUser::where('chatId', $this->chat_id)->first();
+        $user->step = BotUser::STEP_ASK_AGE;
+        $option = [
+            [$this->telegram->buildKeyboardButton("Iltimos yoshingizni kiriting")],
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Jinsingizni belgilang");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askGender()
+    {
+        $option = [
+            [$this->telegram->buildKeyboardButton("Kontraktni ulashish", $request_contact = true)],
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos kontaktingizni jo'nating");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askSpeciality()
+    {
+        $option = [
+            [$this->telegram->buildKeyboardButton("Kontraktni ulashish", $request_contact = true)],
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos kontaktingizni jo'nating");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askExperience()
+    {
+        $option = [
+            [$this->telegram->buildKeyboardButton("Kontraktni ulashish", $request_contact = true)],
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=true, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos kontaktingizni jo'nating");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function showStart()
+    {
+        $user = BotUser::where('chatId', $this->chat_id)->first();
+        $user->step = BotUser::STEP_ASK_FULLNAME;
+        $user->save();
+        $option = [
+            [$this->telegram->buildKeyboardButton("E'lon joylashtirish")]
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
+        $content = array('chat_id' => $this->chat_id, 'reply_markup' => $keyb, 'text' => "O'zingizga munosib ish topish ish uchun faoliyatingiz haqida ma'lumot bering va so'ralgan ma'lumotlarni qoldiring");
+        $this->telegram->sendMessage($content);
     }
 
 }
