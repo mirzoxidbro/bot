@@ -36,34 +36,31 @@ class TrainingCenterBotService
                     }elseif($text == "🇷🇺 Pусский язык"){
                         $this->pagination->setLanguage($chat_id, 'ru');
                     }else{
-                        $this->chooseButton(@$chat_id);
+                        $this->chooseButton($chat_id);
                     }
                     break;
                 case 'main':
                     switch($text){
-                        case $this->textServices->getText('choose_category', @$chat_id) :
-                            $this->showDistricts(@$chat_id);
+                        case $this->textServices->getText('choose_training_center', $chat_id):
+                            $this->showDistricts($chat_id);
                             break;
-                        case "💎 ". $this->textServices->getText('list_training_centers', @$chat_id);
+                        case "💎 ". $this->textServices->getText('list_training_centers', $chat_id);
 
                             break;
 
-                        case '🇺🇿 🇷🇺'.$this->textServices->getText('change_lang', $chat_id):
-                            $this->changeLang($chat_id);
+                        case '🇺🇿🔄🇷🇺'.$this->textServices->getText('change_lang', $chat_id):
+                            if ($this->pagination->getLanguage($chat_id) == 'ru') {
+                                $this->pagination->setLanguage($chat_id, 'uz');
+                            } else {
+                                $this->pagination->setLanguage($chat_id, 'ru');
+                            }
+                            $this->showMainPage($chat_id);
                             break;
                         default:
                             $this->showMainPage($chat_id);
                             break;
                     }
-                case 'change_lang':
-                    if($text == "🇺🇿 O'zbek tili"){
-                        $this->pagination->setLanguage($chat_id, 'uz');
-                    }elseif($text == "🇷🇺 Pусский язык"){
-                        $this->pagination->setLanguage($chat_id, 'ru');
-                    }else{
-                        $this->changeLang($chat_id);
-                    }
-                    break;
+
             }
         }
     }
@@ -84,11 +81,11 @@ class TrainingCenterBotService
         $this->pagination->setPage($chat_id, 'main');
 
         $option = [
-            [$this->telegram->buildKeyboardButton($this->textServices->getText('choose_category', $chat_id)),$this->telegram->buildKeyboardButton("💎 ".$this->textServices->getText('list_training_centers', $chat_id))],
-            [$this->telegram->buildKeyboardButton('🇺🇿 🇷🇺'.$this->textServices->getText('change_lang', $chat_id))]
+            [$this->telegram->buildKeyboardButton($this->textServices->getText('choose_training_center', $chat_id)),$this->telegram->buildKeyboardButton("💎 ".$this->textServices->getText('list_training_centers', $chat_id))],
+            [$this->telegram->buildKeyboardButton('🇺🇿🔄🇷🇺'.$this->textServices->getText('change_lang', $chat_id))]
         ];
         $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
-        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos tilni tanlang. \nПожалуйста, выберите язык");
+        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Kerakli yo'nalishni tanlang");
         $this->telegram->sendMessage($content);
         
     }
@@ -102,24 +99,15 @@ class TrainingCenterBotService
     private function showDistricts($chat_id)
     {
         $this->pagination->setPage($chat_id, 'district');
-        $text = $this->textServices->getText('choose_district', $chat_id);
+        $text = $this->textServices->getText('choose_districts', $chat_id);
+        $lang = $this->pagination->getLanguage($chat_id);
+
         foreach($this->districts->getDistrict($chat_id) as $district){
-            $option[] = [$this->telegram->buildKeyboardButton("📍 ". $district)];
+            info($district->$lang);
+            $option[] = [$this->telegram->buildKeyboardButton("📍 ". $district->$lang)];
         }
         $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
         $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => $text);
-        $this->telegram->sendMessage($content);
-    }
-
-    private function changeLang($chat_id)
-    {
-        $this->pagination->setPage($chat_id, 'change_lang');
-
-        $option = [
-            [$this->telegram->buildKeyboardButton("🇺🇿 O'zbek tili"), $this->telegram->buildKeyboardButton("🇷🇺 Pусский язык")]
-        ];
-        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
-        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos tilni tanlang. \nПожалуйста, выберите язык");
         $this->telegram->sendMessage($content);
     }
 

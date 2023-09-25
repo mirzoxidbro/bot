@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\District;
 use Illuminate\Support\Facades\DB;
 
 class DistrictsService
@@ -17,11 +18,13 @@ class DistrictsService
     {
         $lang = $this->service->getLanguage($chat_id);
 
-        $district = DB::table('districts')->get();
-        if($district)
-        {
-            return $district->$lang;
-        }
-        return '';
+        $district = District::get();
+        // info($district);
+        return $district;
+        // if($district)
+        // {
+        //     return $district->$lang;
+        // }
+        // return '';
     }
 }
