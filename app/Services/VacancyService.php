@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BotUser;
 
 class VacancyService
 {
@@ -24,7 +25,6 @@ class VacancyService
         $text = $message['text'];
         $chat_id = $message['chat']['id'];
         if($text == '/start'){
-            // $this->setLanguage($chat_id);
             $this->showMain($chat_id);
         }else{
             switch($this->pagination->getPage($chat_id)){
@@ -47,6 +47,20 @@ class VacancyService
                             $this->pagination->setLanguage($chat_id, 'uz');
                         }
                         $this->showMain($chat_id);
+                    }
+                    if($text == "💼 ". $this->texts->getText('vacancies', @$chat_id)){
+                        $this->showVacancyStepOne($chat_id);
+                    }
+
+                    break;
+
+                case 'vacancy_step_one':
+                    if($text == $this->texts->getText('back', @$chat_id)." ↩" || $text == "🏠 ". $this->texts->getText('main_menu', @$chat_id))
+                    {
+                        $this->showMain($chat_id);
+                    }elseif($text == "✅ ". $this->texts->getText('agree', @$chat_id))
+                    {
+                        $this->askFullName($chat_id);
                     }
                     break;
             }
@@ -85,6 +99,35 @@ class VacancyService
     private function chooseButton($chat_id)
     {
         $content = array('chat_id' => $chat_id, 'disable_web_page_preview' => false,'text' => "Iltimos belgilangan tugmalardan birini tanlang");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function showVacancyStepOne($chat_id)
+    {
+        $this->pagination->setPage($chat_id, 'vacancy_step_one');
+
+        $content = array('chat_id' => $chat_id, 'disable_web_page_preview' => false,'text' => "Присоединяйтесь в нашу команду!!!😊");
+        $this->telegram->sendMessage($content);
+
+        $option = [
+            [$this->telegram->buildKeyboardButton("✅ ". $this->texts->getText('agree', @$chat_id))],
+            [$this->telegram->buildKeyboardButton("🏠 ". $this->texts->getText('main_menu', @$chat_id)), $this->telegram->buildKeyboardButton($this->texts->getText('back', @$chat_id)." ↩")]
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
+        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Даете ли Вы согласие на обработку ваших персональных данных?");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function askFullName($chat_id)
+    {
+        $this->pagination->setPage($chat_id, 'ask_full_name');
+        $user = BotUser::where('chatId', $chat_id)->first();
+        $option = [
+            // [$this->telegram->buildKeyboardButton($user->fullname)],
+            [$this->telegram->buildKeyboardButton("🏠 ". $this->texts->getText('main_menu', @$chat_id)), $this->telegram->buildKeyboardButton($this->texts->getText('back', @$chat_id)." ↩")]
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
+        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos ismingizni kiriting!");
         $this->telegram->sendMessage($content);
     }
 
