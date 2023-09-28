@@ -15,7 +15,7 @@ class VacancyService
     public function __construct()
     {
         $this->pagination = new Pagination();
-        $this->telegram = new Telegram('6184404394:AAF2Hv4XDZKw37rROZKRJP9Nq1hagBs7y4E');
+        $this->telegram = new Telegram(env('TELEGRAM_BOT_TOKEN'));
         $this->texts = new TextServices();
     }
 
