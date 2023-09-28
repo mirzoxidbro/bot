@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\BotUser;
+use DateTime;
 
 class VacancyService
 {
@@ -20,11 +21,13 @@ class VacancyService
 
     public function handle()
     {
-        $data = $this->telegram->getData();
-        $message = $data['message'];
-        $text = $message['text'];
-        $chat_id = $message['chat']['id'];
+        $text = $this->telegram->Text();
+        // $message = $data['message'];
+        // $text = $message['text'];
+        // $chat_id = $message['chat']['id'];
+        $chat_id = $this->telegram->ChatID();
         if($text == '/start'){
+            $this->pagination->setLanguage($chat_id, 'ru');
             $this->showMain($chat_id);
         }else{
             switch($this->pagination->getPage($chat_id)){
@@ -61,6 +64,36 @@ class VacancyService
                     }elseif($text == "✅ ". $this->texts->getText('agree', @$chat_id))
                     {
                         $this->askFullName($chat_id);
+                    }
+                    break;
+
+                case 'ask_full_name':
+                        if($text == $this->texts->getText('back', @$chat_id)." ↩"){
+                            $this->showVacancyStepOne($chat_id);
+                        }elseif($text == "🏠 ". $this->texts->getText('main_menu', @$chat_id)){
+                            $this->showMain(@$chat_id);
+                        }else{
+                            $this->writeUserFullName(@$chat_id, $text);
+                        }
+                    break;
+                
+                case 'ask_age':
+                    if($text == $this->texts->getText('back', @$chat_id)." ↩"){
+                        $this->askFullName($chat_id);
+                    }elseif($text == "🏠 ". $this->texts->getText('main_menu', @$chat_id)){
+                        $this->showMain(@$chat_id);
+                    }else{
+                        $this->writeAge($chat_id, $text);
+                    }
+                    break;
+
+                case 'ask_technologies':
+                    if($text == $this->texts->getText('back', @$chat_id)." ↩"){
+                        $this->askAge($chat_id);
+                    }elseif($text == "🏠 ". $this->texts->getText('main_menu', @$chat_id)){
+                        $this->showMain(@$chat_id);
+                    }else{
+                        $this->writeKnowledges($chat_id, $text);
                     }
                     break;
             }
@@ -129,6 +162,62 @@ class VacancyService
         $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
         $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Iltimos ismingizni kiriting!");
         $this->telegram->sendMessage($content);
+    }
+
+    private function writeUserFullName($chat_id, $text)
+    {
+        $this->askAge($chat_id);
+
+        $user = BotUser::where('chatId', $chat_id)->first();
+        $user->fullname = $text; $user->save();
+    }
+
+    private function askAge($chat_id)
+    {
+        $this->pagination->setPage($chat_id, 'ask_age');
+
+        $content = array('chat_id' => $chat_id, 'disable_web_page_preview' => false,'text' => "Iltimos tug'ilgan sanangizni kiriting!");
+        $this->telegram->sendMessage($content);    
+
+        $option = [
+            [$this->telegram->buildKeyboardButton("🏠 ". $this->texts->getText('main_menu', @$chat_id)), $this->telegram->buildKeyboardButton($this->texts->getText('back', @$chat_id)." ↩")]
+        ];
+        $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
+        $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "2001-03-22 sana shu formatda bo'lishi kerak!");
+        $this->telegram->sendMessage($content);
+    }
+
+    private function writeAge($chat_id, $text){
+        if($this->validateDate($text)){
+            $this->pagination->setPage($chat_id, 'ask_technologies');
+            $user = BotUser::where('chatId', $chat_id)->first();
+            $user->birth_date = $text; 
+            $user->save();
+            $option = [
+                [$this->telegram->buildKeyboardButton("🏠 ". $this->texts->getText('main_menu', @$chat_id)), $this->telegram->buildKeyboardButton($this->texts->getText('back', @$chat_id)." ↩")]
+            ];
+            $keyb = $this->telegram->buildKeyBoard($option, $onetime=false, $resize=true);
+            $content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "Biladigan texnologiyalaringiz haqida ma'lumot bering");
+            $this->telegram->sendMessage($content);
+        }else{
+            $content = array('chat_id' => $chat_id, 'disable_web_page_preview' => false,'text' => "Iltimos yoshni to'g'ri formatda kiriting!");
+            $this->telegram->sendMessage($content);    
+        }
+
+    }
+
+    function validateDate($date, $format = 'Y-m-d'){
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) === $date;
+    }
+
+    private function writeKnowledges($chat_id, $text)
+    {
+        $this->pagination->setPage($chat_id, 'ask_age');
+        $user = BotUser::where('chatId', $chat_id)->first();
+        $user->knowledge = $text; $user->save();
+        $content = array('chat_id' => $chat_id, 'disable_web_page_preview' => false,'text' => "Ma'lumotlaringiz qabul qilindi. 24 soat ichida o'z e'loningizni ish.uz job portalida ko'rishingiz mumkin!");
+        $this->telegram->sendMessage($content);  
     }
 
 }

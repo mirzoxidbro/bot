@@ -17,10 +17,12 @@ return new class extends Migration
             $table->string('step')->nullable();
             $table->string('fullname')->nullable();
             $table->boolean('gender')->nullable();
-            $table->integer('age')->nullable();
+            $table->date('birth_date')->nullable();
             $table->string('specialty')->nullable();
             $table->string('experience')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('knowledge')->nullable();
+            $table->string('lang')->nullable();
             $table->timestamps();
         });
     }
