@@ -10,7 +10,7 @@ class FirstBotService {
     public $chat_id;
     public function __construct()
     { 
-        $this->telegram = new Telegram('6184404394:AAF2Hv4XDZKw37rROZKRJP9Nq1hagBs7y4E');
+        $this->telegram = new Telegram(env('TELEGRAM_BOT_TOKEN'));
         $this->chat_id = $this->telegram->ChatID();
     }
 
